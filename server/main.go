@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -24,11 +26,24 @@ type Student struct {
 	English int
 }
 
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 var db *gorm.DB
 
 func initDB() {
-	// Replace the password value with your actual PostgreSQL password
-	dsn := "host=localhost user=postgres password=password dbname=edutrack port=5432 sslmode=disable"
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_PORT"),
+	)
 
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -47,7 +62,6 @@ func main() {
 
 	router := gin.Default()
 
-	// Enable CORS for frontend (React running on localhost:3000)
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
@@ -57,7 +71,6 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Route for uploading student data
 	router.POST("/upload", func(c *gin.Context) {
 		var students []map[string]string
 
@@ -70,7 +83,6 @@ func main() {
 			student := Student{
 				Name: data["Name"],
 			}
-
 			fmt.Sscanf(data["Math"], "%d", &student.Math)
 			fmt.Sscanf(data["Science"], "%d", &student.Science)
 			fmt.Sscanf(data["English"], "%d", &student.English)
@@ -102,7 +114,14 @@ func main() {
 			return
 		}
 
-		// Convert to []map[string]interface{}
+		if len(students) == 0 {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "No student data available for analytics.",
+			})
+			return
+		}
+
+		// Prepare input data
 		var inputData []map[string]interface{}
 		for _, s := range students {
 			record := map[string]interface{}{
@@ -114,28 +133,50 @@ func main() {
 			inputData = append(inputData, record)
 		}
 
-		jsonData, _ := json.Marshal(inputData)
-
-		// Execute the Python script
-		cmd := exec.Command("python", "analytics/analyze.py")
-		cmd.Stdin = bytes.NewReader(jsonData)
-		var out bytes.Buffer
-		cmd.Stdout = &out
-
-		if err := cmd.Run(); err != nil {
-			c.JSON(500, gin.H{"error": err.Error()})
+		jsonData, err := json.Marshal(inputData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize student data"})
 			return
 		}
+
+		// Show current working directory
+		cwd, _ := os.Getwd()
+		fmt.Println("Working Directory:", cwd)
+
+		// Execute the Python script
+		cmd := exec.Command("python", "./analytics/analyze.py")
+		cmd.Stdin = bytes.NewReader(jsonData)
+
+		var out bytes.Buffer
+		var stderr bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &stderr
+
+		fmt.Println("Running Python script...")
+
+		if err := cmd.Run(); err != nil {
+			fmt.Println("Python stderr:", stderr.String())
+			fmt.Println("Python stdout:", out.String())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "Python script failed",
+				"details": stderr.String(),
+			})
+			return
+		}
+
+		fmt.Println("Python output:", out.String())
 
 		var resultData map[string]interface{}
 		if err := json.Unmarshal(out.Bytes(), &resultData); err != nil {
-			c.JSON(500, gin.H{"error": "Invalid JSON from Python"})
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "Invalid JSON returned by Python script",
+				"details": out.String(),
+			})
 			return
 		}
 
-		c.JSON(200, resultData)
+		c.JSON(http.StatusOK, resultData)
 	})
 
-	// Start server
 	router.Run(":8080")
 }
