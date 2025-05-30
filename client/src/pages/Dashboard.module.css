@@ -1,0 +1,240 @@
+.dashboardContainer {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.header {
+  color: #1e293b;
+  margin-bottom: 2.5rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #e2e8f0;
+}
+
+.header span {
+  font-size: 2.75rem;
+}
+
+.error {
+  background-color: #fee2e2;
+  color: #dc2626;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  border-left: 5px solid #dc2626;
+  font-weight: 500;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.statCard {
+  background: white;
+  padding: 1.75rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.statCard h3 {
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statCard p {
+  color: #1e293b;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.statCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.15);
+  border-color: #cbd5e1;
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 2.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.tableHeader {
+  padding: 1.5rem;
+  background: white;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tableTitle {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 600px;
+}
+
+.table th {
+  background: #f1f5f9;
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.table td {
+  padding: 1.25rem 1.5rem;
+  color: #1e293b;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 500;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.chartsContainer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-top: 2.5rem;
+}
+
+.chartWrapper {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.75rem;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.chartTitle {
+  color: #1e293b;
+  margin-bottom: 1.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.scrollContainer {
+  overflow-x: auto;
+  border-radius: 1rem;
+}
+
+.scrollContainer::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollContainer::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.scrollContainer::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.scrollContainer::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.scoreCell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scoreIndicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.scoreHigh {
+  background-color: #22c55e;
+}
+
+.scoreMedium {
+  background-color: #eab308;
+}
+
+.scoreLow {
+  background-color: #ef4444;
+}
+
+@media (min-width: 1024px) {
+  .chartsContainer {
+    grid-template-columns: 3fr 2fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboardContainer {
+    padding: 1rem;
+  }
+  
+  .header {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .header span {
+    font-size: 2.25rem;
+  }
+  
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .statCard {
+    padding: 1.5rem;
+  }
+  
+  .statCard p {
+    font-size: 1.75rem;
+  }
+  
+  .tableContainer, .chartWrapper {
+    border-radius: 0.75rem;
+  }
+} 
