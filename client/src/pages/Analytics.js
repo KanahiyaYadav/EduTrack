@@ -30,10 +30,28 @@ const Analytics = () => {
             <li><strong>Math:</strong> {analytics.average_scores?.Math}</li>
             <li><strong>Science:</strong> {analytics.average_scores?.Science}</li>
             <li><strong>English:</strong> {analytics.average_scores?.English}</li>
+            <li><strong>Attendance:</strong> {analytics.average_scores?.Attendance}%</li>
           </ul>
 
           <h3>🏅 Top Performer</h3>
           <p>{analytics.top_student}</p>
+
+          <h3>🎯 Student Performance Categories</h3>
+          <ul>
+            {analytics.categorized_students?.map((s, i) => (
+              <li key={i}>
+                <strong>{s.Name}:</strong>{' '}
+                <span style={{
+                  color:
+                    s.Category.includes("Top") ? "green" :
+                    s.Category.includes("Risk") ? "red" :
+                    s.Category.includes("Needs") ? "orange" : "gray"
+                }}>
+                  {s.Category}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : (
         <p>Loading analytics...</p>

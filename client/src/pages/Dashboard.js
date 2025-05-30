@@ -12,39 +12,33 @@ import {
   ArcElement
 } from 'chart.js';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 const Dashboard = () => {
   const [students, setStudents] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchData = async () => {
       try {
         const res = await axios.get('http://localhost:8080/students');
         setStudents(res.data);
       } catch (err) {
-        setError('Failed to fetch student data.');
+        setError('Failed to fetch student data');
       }
     };
 
-    fetchStudents();
+    fetchData();
   }, []);
 
+  // Prepare data
   const names = students.map((s) => s.Name);
   const math = students.map((s) => s.Math);
   const science = students.map((s) => s.Science);
   const english = students.map((s) => s.English);
+  const attendance = students.map((s) => s.Attendance);
 
-  const average = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+  const average = (arr) => (arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : 0);
 
   const barChartData = {
     labels: names,
@@ -52,59 +46,50 @@ const Dashboard = () => {
       {
         label: 'Math',
         data: math,
-        backgroundColor: 'rgba(54, 162, 235, 0.6)'
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
       },
       {
         label: 'Science',
         data: science,
-        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
       },
       {
         label: 'English',
         data: english,
-        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+      },
+      {
+        label: 'Attendance (%)',
+        data: attendance,
+        backgroundColor: 'rgba(255, 206, 86, 0.6)',
       }
     ]
-  };
-
-  const barChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top'
-      },
-      title: {
-        display: true,
-        text: 'Subject-wise Scores'
-      }
-    }
   };
 
   const pieChartData = {
-    labels: ['Math Avg', 'Science Avg', 'English Avg'],
+    labels: ['Math', 'Science', 'English', 'Attendance'],
     datasets: [
       {
-        data: [average(math), average(science), average(english)],
+        label: 'Average Scores',
+        data: [
+          average(math),
+          average(science),
+          average(english),
+          average(attendance)
+        ],
         backgroundColor: [
           'rgba(54, 162, 235, 0.6)',
           'rgba(75, 192, 192, 0.6)',
-          'rgba(255, 99, 132, 0.6)'
-        ],
-        borderWidth: 1
+          'rgba(255, 99, 132, 0.6)',
+          'rgba(255, 206, 86, 0.6)'
+        ]
       }
     ]
   };
 
-  const pieChartOptions = {
+  const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Average Scores by Subject'
-      }
-    }
   };
 
   return (
@@ -114,14 +99,15 @@ const Dashboard = () => {
 
       {students.length > 0 ? (
         <>
-          <h3>Student Data Table</h3>
-          <table border="1" cellPadding="5" style={{ margin: '20px auto', width: '80%' }}>
+          <h3>Student Records</h3>
+          <table border="1" cellPadding="5">
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Math</th>
                 <th>Science</th>
                 <th>English</th>
+                <th>Attendance (%)</th>
               </tr>
             </thead>
             <tbody>
@@ -131,23 +117,26 @@ const Dashboard = () => {
                   <td>{s.Math}</td>
                   <td>{s.Science}</td>
                   <td>{s.English}</td>
+                  <td>{s.Attendance}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-around' }}>
-            <div style={{ width: '600px', height: '400px', margin: '20px' }}>
-              <Bar data={barChartData} options={barChartOptions} />
+          <div style={{ marginTop: '40px' }}>
+            <h3>Performance Overview (Bar Chart)</h3>
+            <div style={{ height: '400px' }}>
+              <Bar data={barChartData} options={chartOptions} />
             </div>
 
-            <div style={{ width: '400px', height: '400px', margin: '20px' }}>
-              <Pie data={pieChartData} options={pieChartOptions} />
+            <h3 style={{ marginTop: '40px' }}>Average Score Distribution (Pie Chart)</h3>
+            <div style={{ height: '300px' }}>
+              <Pie data={pieChartData} options={chartOptions} />
             </div>
           </div>
         </>
       ) : (
-        <p>No student data available. Please upload some CSV data.</p>
+        <p>No student data available.</p>
       )}
     </div>
   );

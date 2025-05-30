@@ -8,29 +8,22 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// Student model
 type Student struct {
 	gorm.Model
-	Name    string
-	Math    int
-	Science int
-	English int
-}
-
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	Name       string
+	Math       int
+	Science    int
+	English    int
+	Attendance int
 }
 
 var db *gorm.DB
@@ -57,9 +50,18 @@ func initDB() {
 	}
 }
 
+// Utility to safely parse integers from strings
+func safeParseInt(value string) int {
+	var i int
+	_, err := fmt.Sscanf(strings.TrimSpace(value), "%d", &i)
+	if err != nil {
+		return 0
+	}
+	return i
+}
+
 func main() {
 	initDB()
-
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
@@ -73,27 +75,29 @@ func main() {
 
 	router.POST("/upload", func(c *gin.Context) {
 		var students []map[string]string
-
 		if err := c.BindJSON(&students); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		for _, data := range students {
-			student := Student{
-				Name: data["Name"],
-			}
-			fmt.Sscanf(data["Math"], "%d", &student.Math)
-			fmt.Sscanf(data["Science"], "%d", &student.Science)
-			fmt.Sscanf(data["English"], "%d", &student.English)
+		fmt.Println("Received data:", students) // Add this line
 
+		for _, data := range students {
+			fmt.Println("Raw row:", data) // Add this too
+
+			student := Student{
+				Name:       data["Name"],
+				Math:       safeParseInt(data["Math"]),
+				Science:    safeParseInt(data["Science"]),
+				English:    safeParseInt(data["English"]),
+				Attendance: safeParseInt(data["Attendance"]),
+			}
+			println("Parsed row:", student.Attendance)
+			println("Name:", student.Name)
 			db.Create(&student)
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Data saved to database",
-			"count":   len(students),
-		})
+		c.JSON(http.StatusOK, gin.H{"message": "Data saved to database", "count": len(students)})
 	})
 
 	router.GET("/students", func(c *gin.Context) {
@@ -114,68 +118,42 @@ func main() {
 			return
 		}
 
-		if len(students) == 0 {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "No student data available for analytics.",
-			})
-			return
+		uniqueMap := map[string]Student{}
+		for _, s := range students {
+			uniqueMap[s.Name] = s
 		}
 
-		// Prepare input data
 		var inputData []map[string]interface{}
-		for _, s := range students {
+		for _, s := range uniqueMap {
 			record := map[string]interface{}{
-				"Name":    s.Name,
-				"Math":    s.Math,
-				"Science": s.Science,
-				"English": s.English,
+				"Name":       s.Name,
+				"Math":       s.Math,
+				"Science":    s.Science,
+				"English":    s.English,
+				"Attendance": s.Attendance,
 			}
 			inputData = append(inputData, record)
 		}
 
-		jsonData, err := json.Marshal(inputData)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to serialize student data"})
-			return
-		}
+		jsonData, _ := json.Marshal(inputData)
 
-		// Show current working directory
-		cwd, _ := os.Getwd()
-		fmt.Println("Working Directory:", cwd)
-
-		// Execute the Python script
-		cmd := exec.Command("python", "./analytics/analyze.py")
+		cmd := exec.Command("python", "analytics/analyze.py")
 		cmd.Stdin = bytes.NewReader(jsonData)
-
 		var out bytes.Buffer
-		var stderr bytes.Buffer
 		cmd.Stdout = &out
-		cmd.Stderr = &stderr
-
-		fmt.Println("Running Python script...")
 
 		if err := cmd.Run(); err != nil {
-			fmt.Println("Python stderr:", stderr.String())
-			fmt.Println("Python stdout:", out.String())
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error":   "Python script failed",
-				"details": stderr.String(),
-			})
+			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
-
-		fmt.Println("Python output:", out.String())
 
 		var resultData map[string]interface{}
 		if err := json.Unmarshal(out.Bytes(), &resultData); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error":   "Invalid JSON returned by Python script",
-				"details": out.String(),
-			})
+			c.JSON(500, gin.H{"error": "Invalid JSON from Python"})
 			return
 		}
 
-		c.JSON(http.StatusOK, resultData)
+		c.JSON(200, resultData)
 	})
 
 	router.Run(":8080")
